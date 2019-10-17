@@ -3,8 +3,8 @@ from gophish.models import *
 import urllib.request, json
 import ssl
 
-api_key = 'b39cbc6caa750c7eeacbb82f76b50965be32837e8f8d1ffc9a6d5665a4a1fc79'
-api = Gophish(api_key, host='https://10.70.70.15:3333', verify=False)
+api_key = 'YOUR_API_KEY_HERE'
+api = Gophish(api_key, host='https://GOPHISH_URL:3333', verify=False)
 
 #Get campaign Name
 
@@ -26,7 +26,7 @@ resultcampaign = campaigndict[askcampaign.title()]
 
 #Get results for specific campaigns
 
-url = "https://10.70.70.15:3333/api/campaigns/"+ str(resultcampaign) +"/results?api_key="+api_key  #Constructs URL to RESTAPI with campaign ID
+url = "https://GOPHISH_URL:3333/api/campaigns/"+ str(resultcampaign) +"/results?api_key="+api_key  #Constructs URL to RESTAPI with campaign ID
 #print(url) #Prints the URL. User for verification purposes only.
 context = ssl._create_unverified_context() #Bypasses SSL Verification
 campaignresponse = urllib.request.urlopen(url, context=context) #Requests the URL, Context bypasses ssl Verification
@@ -47,7 +47,7 @@ user_rid = riddict[askemail]
 print("RID for the User is: " + user_rid)
 #Ask the user if they want to verify on the user's behalf
 asktopost = input("Verify USER Reported Email? Type Y or N: ")
-campaignurl = "http://10.70.70.15"
+campaignurl = "http://CAMPAIGN_IP"
 #If yes
 if asktopost == 'Y':
     #Construct the URL with the USER RID
