@@ -4,6 +4,7 @@ import urllib.request, json
 import ssl
 import re
 import config
+import fileimport
 
 api_key = (config.api_key)
 gohost = "GOPHISH_ADMINURL HERE"
@@ -58,35 +59,74 @@ while active:
             riddict.update([(campaignresult['email'],campaignresult['id'])])
             #with the email and the rid of the user in email:rid format.
         #print(riddict) #Prints the RID Dictionary riddict list
+
+
         #Constructing the Report link:
-        askemail = input("Enter the User's email address to report: ")
-        if re.search('(.*)@(.*).(.*)',askemail.lower()):
-            #We get the RID by comparing the email to the riddict dictionary.
-            user_rid = riddict[askemail]
-            #Tell the user the RID of the requested email address.
-            print("RID for the User is: " + user_rid)
-            #Ask the user if they want to verify on the user's behalf
-            asktopost = input("Verify USER Reported Email? Type Y or N: ")
-            #If yes
-            if asktopost.title() == 'Y':
+        #ASKING THE USER A CHOICE - Import File or manually enter address.
+
+        print("Please select the below options: \
+        \na - Manually enter Users email address.\
+        \nb - Import a file with email addresses")
+        inputchoice = input("\nEnter your choice: ")
+
+        if inputchoice.lower() == "a":
+            askemail = input("Enter the User's email address to report: ")
+            if re.search('(.*)@(.*).(.*)',askemail.lower()):
+                #We get the RID by comparing the email to the riddict dictionary.
+                user_rid = riddict[askemail]
+                #Tell the user the RID of the requested email address.
+                print("RID for the User is: " + user_rid)
+                #Ask the user if they want to verify on the user's behalf
+                asktopost = input("Verify USER Reported Email? Type Y or N: ")
+                #If yes
+                if asktopost.title() == 'Y':
+                    #Construct the URL with the USER RID
+                    reporturl = campaignurl + "/report?rid=" + user_rid
+                    #Prints the URL for verification
+                    print("\nThis is the URL that will be opened: " + reporturl)
+                    #Open the url without SSL Verification and store the
+                    # response in #report_response variable.
+                    report_response = urllib.request.urlopen(reporturl, \
+                    context=context)
+                    #Print the success and also the response if any.
+                    print("\nEmail Report updated for user" + askemail)
+                    print(report_response)
+                    #If not
+                else:
+                    #Cancellation prompt
+                    print("Canceled on User input")
+            else:
+                active = False
+                print("Please enter a valid email address.")
+        #IF User selects to import from file.
+        elif inputchoice.lower() == "b":
+            #Enter name of the file to use. Should be in same directory.
+            emailfile = input("Enter the filename.E.g. email.txt: ")
+            #Uses the importemail function from fileimport, and sets the file
+            fileimport.importEmail(emailfile)
+            #creates a list with only unique addresses from the function
+            uniqEmails = set(fileimport.listEmail)
+            print("\nReport Requests will be made for below emails:\n")
+            #For loop to create requests to Report RIDs
+            for uniqEmail in uniqEmails:
+                print("\n" + uniqEmail)
+                uniq_rid = riddict[uniqEmail]
+                print("RID for the User is: " + uniq_rid)
                 #Construct the URL with the USER RID
-                reporturl = campaignurl + "/report?rid=" + user_rid
-                #Prints the URL for verification
-                print("\nThis is the URL that will be opened: " + reporturl)
-                #Open the url without SSL Verification and store the response in
-                #report_response variable.
+                reporturl = campaignurl + "/report?rid=" + uniq_rid
+                #Open the url without SSL Verification and store the
+                # response in #report_response variable.
                 report_response = urllib.request.urlopen(reporturl, \
                 context=context)
                 #Print the success and also the response if any.
-                print("\nEmail Report updated for user" + askemail)
-                print(report_response)
-            #If not
-            else:
-                #Cancellation prompt
-                print("Canceled on User input")
+                #print(report_response)
+            print("\nEmail Report updated for the below user:")
+            for printEmail in uniqEmails:
+                print(printEmail)
+            active=False
         else:
             active = False
-            print("Please enter a valid email address.")
+            print("No correct options were selected.")
     else:
         active = False
         print("Please enter a correct campaign name.")
