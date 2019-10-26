@@ -5,15 +5,23 @@ import ssl
 import re
 import config
 import fileimport
+import imaplib
+import email
+import io
+import base64
 
+#Required declarations
 api_key = (config.api_key)
 gohost = "GOPHISH_ADMINURL HERE"
 campaignurl = "GOPHISH_CAMPAIGNURL_HERE"
 api = Gophish(api_key, host=gohost, verify=False)
+phishers = []
+listReporters = []
+uniqReporters = []
 
-print("||||||||||WELCOME TO GoEmailReporter ||||||||")
-print("\n********An EMAIL REPORTING TOOL for GOPHISH************")
-print("#######By ASHISH CHALKE########\n")
+print("|"*10 + "WELCOME TO GoEmailReporter" +"|"*10)
+print("\n********An EMAIL REPORTING TOOL for GOPHISH*******")
+print("#######By ASHISH CHALKE#######\n")
 
 #Get campaign Name
 campaigndict = {} #Create an empty campaign dictionary
@@ -66,7 +74,8 @@ while active:
 
         print("Please select the below options: \
         \na - Manually enter Users email address.\
-        \nb - Import a file with email addresses")
+        \nb - Import a file with email addresses \
+        \nc - Connect to email account and pull.")
         inputchoice = input("\nEnter your choice: ")
 
         if inputchoice.lower() == "a":
@@ -123,6 +132,76 @@ while active:
             print("\nEmail Report updated for the below user:")
             for printEmail in uniqEmails:
                 print(printEmail)
+            active=False
+        elif inputchoice.lower() == "c":
+            #This block of code automatically reads unread messages from
+            #specified inbox based on the subject specified and extracts from
+            #addresses and then proceeds to report the rid using extraction
+            #technique. Messages whose emails are extracted will automatically
+            #marked as SEEN to as not to be reported again when the tool is rerun
+            print("Enter a subject to search at the prompt. The search can perform exact \
+            matches as well as partial matches. However try to be as specific as possible.")
+            subject_line = input("Enter the email subject: ")
+
+            print("\nMailbox values will be imported from the config.py file in\
+            this directory. If this function fails, please ensure that the \
+            values entered in config.py are correct.\n \
+            Values imported include Mail server address, username, password.")
+
+            #Creates a connection to the mailbox
+            imap = imaplib.IMAP4_SSL(config.emailhost)
+            #Login info
+            imap.login(config.emailuser, config.emailpassword)
+            #Select inbox folder
+            status, data = imap.select('INBOX')
+            #Search emails with the specified subject and only if they are unread
+            status, messages = imap.search(None, 'UNSEEN','SUBJECT',
+            subject_line)
+            #Adds response to a list called mess.
+            mess = messages[0]
+            #Splits single list to each digit.
+            message_list = mess.split()
+            #Fetches the emails and stores in list called mail
+            for message in message_list:
+                typ, mails = imap.fetch(message, '(RFC822)')
+                #For loop to extract from addresses from the mails.
+                for mail in mails:
+                    if isinstance(mail, tuple):
+                        #Decodes into UTF-8, required for Python 3
+                        bmail = [x.decode('utf-8') for x in mail]
+                        #Stores the message and makes searchable.
+                        msg = email.message_from_string(bmail[1])
+                        #Extracts the from address for the email.
+                        varFrom = msg['from']
+                        #Replaces the <> in the email address with emptynesssss
+                        varFrom = varFrom.replace('<', '')
+                        varFrom = varFrom.replace('>', '')
+
+                        #Splits the varFrom list
+                        phishers = varFrom.split()
+                        #Below codeblock validates if the parameter is an email address \
+                        #If it is an email address appends it to the list listReporters
+                        for phish in phishers:
+                            if(fileimport.validateEmail(phish)):
+                                listReporters.append(phish)
+            #Only imports unique addresses from the listReporters list.
+            uniqReporters = set(listReporters)
+            #For loop to create requests to Report RIDs
+            for uniqReporter in uniqReporters:
+                print("\n" + uniqReporter)
+                uniq_rid = riddict[uniqReporter]
+                print("RID for the User is: " + uniq_rid)
+                #Construct the URL with the USER RID
+                reporturl = campaignurl + "/report?rid=" + uniq_rid
+                #Open the url without SSL Verification and store the
+                # response in #report_response variable.
+                report_response = urllib.request.urlopen(reporturl, \
+                context=context)
+                #Print the success and also the response if any.
+                #print(report_response)
+            print("\nEmail Report updated for the below user:")
+            for printReporter in uniqReporters:
+                print(printReporter)
             active=False
         else:
             active = False
