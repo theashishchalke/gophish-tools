@@ -41,9 +41,9 @@ while active:
     askcampaign = input("\nEnter the name of the campaign: ")
     if re.search('\w+',askcampaign.lower()):
         print("\nThe campaign ID for the entered campaign is: "
-            + campaigndict[askcampaign.title()])
+            + campaigndict[askcampaign])
         #Store the requested campaign in resultcampaign variable.
-        resultcampaign = campaigndict[askcampaign.title()]
+        resultcampaign = campaigndict[askcampaign]
         #Get results for specific campaigns
         #Constructs URL to RESTAPI with campaign ID
         url = (gohost+"/api/campaigns/"+str(resultcampaign)+"/results?api_key="
